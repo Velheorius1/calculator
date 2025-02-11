@@ -102,8 +102,8 @@ const Calculator = () => {
         whitePricePerM2: 400000
       },
       plotter: {
-        A3: 15000,
-        A2: 25000
+        A3: 12000,
+        A2: 12000
       }
     }
   };
@@ -740,28 +740,67 @@ const Calculator = () => {
                     <span className="text-right">{results.paperWeight.toFixed(2)}</span>
                     
                     <span>Стоимость бумаги:</span>
-                    <span className="text-right">{results.costs.paper.toFixed(2)}</span>
+                    <span className="text-right">
+                      {results.costs.paper.toFixed(2)}
+                      <br />
+                      <span className="text-sm text-gray-500">
+                        ({(results.costs.paper / component.quantity).toFixed(2)} за ед.)
+                      </span>
+                    </span>
                     
                     <span>Стоимость печати:</span>
-                    <span className="text-right">{results.costs.printing.toFixed(2)}</span>
+                    <span className="text-right">
+                      {results.costs.printing.toFixed(2)}
+                      <br />
+                      <span className="text-sm text-gray-500">
+                        ({(results.costs.printing / component.quantity).toFixed(2)} за ед.)
+                      </span>
+                    </span>
                     
                     <span>Стоимость форм:</span>
-                    <span className="text-right">{results.costs.forms.toFixed(2)}</span>
+                    <span className="text-right">
+                      {results.costs.forms.toFixed(2)}
+                      <br />
+                      <span className="text-sm text-gray-500">
+                        ({(results.costs.forms / component.quantity).toFixed(2)} за ед.)
+                      </span>
+                    </span>
                     
                     <span>Доп. операции:</span>
-                    <span className="text-right">{results.costs.additional.toFixed(2)}</span>
+                    <span className="text-right">
+                      {results.costs.additional.toFixed(2)}
+                      <br />
+                      <span className="text-sm text-gray-500">
+                        ({(results.costs.additional / component.quantity).toFixed(2)} за ед.)
+                      </span>
+                    </span>
                     
                     <span className="font-medium">Общая себестоимость:</span>
-                    <span className="text-right font-medium">{results.costs.total.toFixed(2)}</span>
+                    <span className="text-right font-medium">
+                      {results.costs.total.toFixed(2)}
+                      <br />
+                      <span className="text-sm text-gray-500">
+                        ({(results.costs.total / component.quantity).toFixed(2)} за ед.)
+                      </span>
+                    </span>
                     
                     <span>Цена без НДС:</span>
-                    <span className="text-right">{results.prices.withoutVAT.toFixed(2)}</span>
+                    <span className="text-right">
+                      {results.prices.withoutVAT.toFixed(2)}
+                      <br />
+                      <span className="text-sm text-gray-500">
+                        ({(results.prices.withoutVAT / component.quantity).toFixed(2)} за ед.)
+                      </span>
+                    </span>
                     
-                    <span>Цена с НДС:</span>
-                    <span className="text-right">{results.prices.withVAT.toFixed(2)}</span>
-                    
-                    <span className="font-medium">Цена за единицу:</span>
-                    <span className="text-right font-medium">{results.prices.perUnit.toFixed(2)}</span>
+                    <span>Цена с НДС (12%):</span>
+                    <span className="text-right">
+                      {results.prices.withVAT.toFixed(2)}
+                      <br />
+                      <span className="text-sm text-gray-500">
+                        ({results.prices.perUnit.toFixed(2)} за ед.)
+                      </span>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -786,13 +825,31 @@ const Calculator = () => {
         <CardContent>
           <div className="grid grid-cols-2 gap-2">
             <span className="font-medium">Общая себестоимость:</span>
-            <span className="text-right font-medium">{totalResults.totalCost.toFixed(2)}</span>
+            <span className="text-right font-medium">
+              {totalResults.totalCost.toFixed(2)}
+              <br />
+              <span className="text-sm text-gray-500">
+                ({(totalResults.totalCost / components.reduce((sum, comp) => sum + comp.quantity, 0)).toFixed(2)} средняя цена за ед.)
+              </span>
+            </span>
             
             <span>Общая цена без НДС:</span>
-            <span className="text-right">{totalResults.totalPriceWithoutVAT.toFixed(2)}</span>
+            <span className="text-right">
+              {totalResults.totalPriceWithoutVAT.toFixed(2)}
+              <br />
+              <span className="text-sm text-gray-500">
+                ({(totalResults.totalPriceWithoutVAT / components.reduce((sum, comp) => sum + comp.quantity, 0)).toFixed(2)} средняя цена за ед.)
+              </span>
+            </span>
             
-            <span>Общая цена с НДС:</span>
-            <span className="text-right">{totalResults.totalPriceWithVAT.toFixed(2)}</span>
+            <span>Общая цена с НДС (12%):</span>
+            <span className="text-right">
+              {totalResults.totalPriceWithVAT.toFixed(2)}
+              <br />
+              <span className="text-sm text-gray-500">
+                ({(totalResults.totalPriceWithVAT / components.reduce((sum, comp) => sum + comp.quantity, 0)).toFixed(2)} средняя цена за ед.)
+              </span>
+            </span>
           </div>
         </CardContent>
       </Card>
