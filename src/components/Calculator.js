@@ -84,11 +84,13 @@ const Calculator = () => {
       },
       threeDLacquer: {
         A3: 8000,
-        A2: 12000
+        A2: 12000,
+        A1: null
       },
       threeDFoil: {
         A3: 18000,
-        A2: 29000
+        A2: 29000,
+        A1: null
       },
       spotLacquer: {
         A3: { base: 400000, perUnit: 400, threshold: 1000 },
@@ -185,12 +187,22 @@ const Calculator = () => {
 
     // 3D Lacquer (3д лак)
     if (component.options.threeDLacquer.enabled) {
-      additionalCost += prices.operations.threeDLacquer[component.format] * totalSheets;
+      const price = prices.operations.threeDLacquer[component.format];
+      if (price === null) {
+        console.warn('3D лак недоступен для формата ' + component.format);
+      } else {
+        additionalCost += price * totalSheets;
+      }
     }
 
     // 3D Foil (3д фольга)
     if (component.options.threeDFoil.enabled) {
-      additionalCost += prices.operations.threeDFoil[component.format] * totalSheets;
+      const price = prices.operations.threeDFoil[component.format];
+      if (price === null) {
+        console.warn('3D фольга недоступна для формата ' + component.format);
+      } else {
+        additionalCost += price * totalSheets;
+      }
     }
 
     // Spot Lacquer (выборочный трафаретный лак)
@@ -356,7 +368,19 @@ const Calculator = () => {
                     <label className="block text-sm font-medium">Формат</label>
                     <select
                       value={component.format}
-                      onChange={(e) => updateComponent(component.id, 'format', e.target.value)}
+                      onChange={(e) => {
+                        const newFormat = e.target.value;
+                        if (newFormat === 'A1') {
+                          // Отключаем 3D операции при переключении на A1
+                          if (component.options.threeDLacquer.enabled) {
+                            updateComponentOption(component.id, 'threeDLacquer', 'enabled', false);
+                          }
+                          if (component.options.threeDFoil.enabled) {
+                            updateComponentOption(component.id, 'threeDFoil', 'enabled', false);
+                          }
+                        }
+                        updateComponent(component.id, 'format', newFormat);
+                      }}
                       className="w-full p-2 border rounded"
                     >
                       <option value="A1">A1</option>
@@ -605,10 +629,20 @@ const Calculator = () => {
                         <input
                           type="checkbox"
                           checked={component.options.threeDLacquer.enabled}
-                          onChange={(e) => updateComponentOption(component.id, 'threeDLacquer', 'enabled', e.target.checked)}
+                          onChange={(e) => {
+                            if (e.target.checked && component.format === 'A1') {
+                              alert('3D лак недоступен для формата A1');
+                              return;
+                            }
+                            updateComponentOption(component.id, 'threeDLacquer', 'enabled', e.target.checked)
+                          }}
                           className="rounded"
+                          disabled={component.format === 'A1'}
                         />
                         <span>3D лак</span>
+                        {component.format === 'A1' && (
+                          <span className="text-red-500 text-sm">(недоступно для A1)</span>
+                        )}
                       </label>
                     </div>
 
@@ -618,10 +652,20 @@ const Calculator = () => {
                         <input
                           type="checkbox"
                           checked={component.options.threeDFoil.enabled}
-                          onChange={(e) => updateComponentOption(component.id, 'threeDFoil', 'enabled', e.target.checked)}
+                          onChange={(e) => {
+                            if (e.target.checked && component.format === 'A1') {
+                              alert('3D фольга недоступна для формата A1');
+                              return;
+                            }
+                            updateComponentOption(component.id, 'threeDFoil', 'enabled', e.target.checked)
+                          }}
                           className="rounded"
+                          disabled={component.format === 'A1'}
                         />
                         <span>3D фольга</span>
+                        {component.format === 'A1' && (
+                          <span className="text-red-500 text-sm">(недоступно для A1)</span>
+                        )}
                       </label>
                     </div>
 
