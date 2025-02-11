@@ -13,8 +13,9 @@ const initialComponentData = {
   priceType: 'kg',
   profitMargin: 30,
   pagesPerProduct: 1,
+  printedSheets: 1,
   options: {
-    printing: { enabled: true, doubleSided: false },
+    printing: { enabled: true, doubleSided: false, doubleForms: false },
     lamination: { enabled: false, doubleSided: false },
     uvCoating: { enabled: false, doubleSided: false },
     embossing: { enabled: false, doubleSided: false },
@@ -110,7 +111,7 @@ const Calculator = () => {
 
   const calculateComponentCost = (component) => {
     const sheetsPerProduct = Math.ceil(component.pagesPerProduct / component.sharesPerSheet);
-    const totalSheets = Math.ceil(component.quantity * sheetsPerProduct) + component.setupSheets;
+    const totalSheets = (Math.ceil(component.quantity * sheetsPerProduct) + component.setupSheets) * component.printedSheets;
     const totalArea = totalSheets * component.sheetArea;
     const paperWeight = totalArea * component.paperWeight;
     
@@ -120,9 +121,12 @@ const Calculator = () => {
 
     const format = prices.formats[component.format];
     const printMultiplier = component.options.printing.doubleSided ? 2 : 1;
-    const printingCost = (format.printSetup + 
+    
+    const printingCost = component.printedSheets * (format.printSetup + 
       (component.quantity > 1000 ? (component.quantity - 1000) * format.printPerUnit : 0)) * printMultiplier;
-    const formsCost = format.forms * printMultiplier;
+    
+    const formsMultiplier = component.options.printing.doubleForms ? 2 : 1;
+    const formsCost = format.forms * printMultiplier * component.printedSheets * formsMultiplier;
 
     let additionalCost = 0;
 
@@ -421,6 +425,16 @@ const Calculator = () => {
                       className="w-full p-2 border rounded"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Количество печатных листов</label>
+                    <input
+                      type="number"
+                      value={component.printedSheets}
+                      onChange={(e) => updateComponent(component.id, 'printedSheets', parseInt(e.target.value) || 1)}
+                      min="1"
+                      className="w-full p-2 border rounded"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-3 gap-4">
@@ -481,34 +495,43 @@ const Calculator = () => {
                 <div className="space-y-4">
                   <h3 className="font-medium">Операции:</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Стандартные операции с двусторонней опцией */}
-                    {['printing', 'lamination', 'uvCoating', 'embossing', 'dieCutting', 'congreve'].map((key) => (
-                      <div key={key} className="space-y-2">
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={component.options[key].enabled}
-                            onChange={(e) => updateComponentOption(component.id, key, 'enabled', e.target.checked)}
-                            className="rounded"
-                          />
-                          <span className="capitalize">{key}</span>
-                        </label>
-                        {component.options[key].enabled && (
-                          <label className="flex items-center space-x-2 pl-6">
+                    {/* Печать с дополнительными опциями */}
+                    <div className="space-y-2">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={component.options.printing.enabled}
+                          onChange={(e) => updateComponentOption(component.id, 'printing', 'enabled', e.target.checked)}
+                          className="rounded"
+                        />
+                        <span>Печать</span>
+                      </label>
+                      {component.options.printing.enabled && (
+                        <div className="pl-6 space-y-2">
+                          <label className="flex items-center space-x-2">
                             <input
                               type="checkbox"
-                              checked={component.options[key].doubleSided}
-                              onChange={(e) => updateComponentOption(component.id, key, 'doubleSided', e.target.checked)}
+                              checked={component.options.printing.doubleSided}
+                              onChange={(e) => updateComponentOption(component.id, 'printing', 'doubleSided', e.target.checked)}
                               className="rounded"
                             />
                             <span>Двусторонняя</span>
                           </label>
-                        )}
-                      </div>
-                    ))}
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={component.options.printing.doubleForms}
+                              onChange={(e) => updateComponentOption(component.id, 'printing', 'doubleForms', e.target.checked)}
+                              className="rounded"
+                            />
+                            <span>Двойной комплект форм</span>
+                          </label>
+                        </div>
+                      )}
+                    </div>
 
-                    {/* Простые операции без дополнительных опций */}
-                    {['foil', 'thermalBinding'].map((key) => (
+                    {/* Остальные операции */}
+                    {['lamination', 'uvCoating', 'embossing', 'dieCutting', 'congreve', 'foil', 'thermalBinding', 'stapling', 'threadSewing', 'folding', 'mounting', 'threeDLacquer', 'threeDFoil', 'spotLacquer', 'uvPrinting', 'plotter'].map((key) => (
                       <div key={key} className="space-y-2">
                         <label className="flex items-center space-x-2">
                           <input
@@ -517,7 +540,7 @@ const Calculator = () => {
                             onChange={(e) => updateComponentOption(component.id, key, 'enabled', e.target.checked)}
                             className="rounded"
                           />
-                          <span>{key === 'foil' ? 'Фольга' : 'Термоклей'}</span>
+                          <span>{key === 'foil' ? 'Фольга' : key === 'thermalBinding' ? 'Термоклей' : key.charAt(0).toUpperCase() + key.slice(1)}</span>
                         </label>
                       </div>
                     ))}
@@ -729,8 +752,11 @@ const Calculator = () => {
                     
                     <span>Печатных листов на изделие:</span>
                     <span className="text-right">{results.sheetsPerProduct}</span>
+
+                    <span>Количество печатных листов:</span>
+                    <span className="text-right">{component.printedSheets}</span>
                     
-                    <span>Общее количество печатных листов:</span>
+                    <span>Общее количество листов с приладкой:</span>
                     <span className="text-right">{results.sheets}</span>
                     
                     <span>Общая площадь (м²):</span>
@@ -748,7 +774,7 @@ const Calculator = () => {
                       </span>
                     </span>
                     
-                    <span>Стоимость печати:</span>
+                    <span>Стоимость печати{component.options.printing.doubleSided ? ' (двусторонняя)' : ''}:</span>
                     <span className="text-right">
                       {results.costs.printing.toFixed(2)}
                       <br />
@@ -757,7 +783,7 @@ const Calculator = () => {
                       </span>
                     </span>
                     
-                    <span>Стоимость форм:</span>
+                    <span>Стоимость форм{component.options.printing.doubleForms ? ' (двойной комплект)' : ''}:</span>
                     <span className="text-right">
                       {results.costs.forms.toFixed(2)}
                       <br />
