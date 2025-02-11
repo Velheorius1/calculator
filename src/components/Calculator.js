@@ -233,7 +233,8 @@ const Calculator = () => {
 
     const totalCost = paperCost + printingCost + formsCost + additionalCost;
     const vatDeduction = totalCost * 0.115;
-    const priceWithoutVAT = totalCost / (1 - (component.profitMargin / 100));
+    const profitMultiplier = 1 / (1 - (component.profitMargin / 100));
+    const priceWithoutVAT = totalCost * profitMultiplier;
     const priceWithVAT = (priceWithoutVAT * 1.12) - vatDeduction;
 
     return {
@@ -483,9 +484,14 @@ const Calculator = () => {
                     <input
                       type="number"
                       value={component.profitMargin}
-                      onChange={(e) => updateComponent(component.id, 'profitMargin', parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        if (value >= 0 && value < 100) {
+                          updateComponent(component.id, 'profitMargin', value);
+                        }
+                      }}
                       min="0"
-                      max="100"
+                      max="99.9"
                       step="0.1"
                       className="w-full p-2 border rounded"
                     />
