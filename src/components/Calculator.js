@@ -642,10 +642,12 @@ const Calculator = () => {
                                   updateComponentOption(component.id, 'printing', 'enabled', false);
                                 }
                                 updateComponentOption(component.id, 'digitalPrinting', 'enabled', e.target.checked);
-                                // Сбрасываем все опции при отключении
                                 if (!e.target.checked) {
                                   updateComponentOption(component.id, 'digitalPrinting', 'sra3Single', false);
                                   updateComponentOption(component.id, 'digitalPrinting', 'sra3Double', false);
+                                  updateComponentOption(component.id, 'digitalPrinting', 'largeFormatSingle', false);
+                                  updateComponentOption(component.id, 'digitalPrinting', 'largeFormatDouble', false);
+                                }
                               }}
                               className="rounded"
                             />
@@ -656,20 +658,66 @@ const Calculator = () => {
                               <label className="flex items-center space-x-2">
                                 <input
                                   type="checkbox"
-                                  checked={component.options.digitalPrinting.doubleSided}
-                                  onChange={(e) => updateComponentOption(component.id, 'digitalPrinting', 'doubleSided', e.target.checked)}
+                                  checked={component.options.digitalPrinting.sra3Single}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      updateComponentOption(component.id, 'digitalPrinting', 'sra3Double', false);
+                                      updateComponentOption(component.id, 'digitalPrinting', 'largeFormatSingle', false);
+                                      updateComponentOption(component.id, 'digitalPrinting', 'largeFormatDouble', false);
+                                    }
+                                    updateComponentOption(component.id, 'digitalPrinting', 'sra3Single', e.target.checked);
+                                  }}
                                   className="rounded"
                                 />
-                                <span>Двусторонняя (4+4)</span>
+                                <span>SRA3 4+0 (2,500)</span>
                               </label>
                               <label className="flex items-center space-x-2">
                                 <input
                                   type="checkbox"
-                                  checked={component.options.digitalPrinting.largeFormat}
-                                  onChange={(e) => updateComponentOption(component.id, 'digitalPrinting', 'largeFormat', e.target.checked)}
+                                  checked={component.options.digitalPrinting.sra3Double}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      updateComponentOption(component.id, 'digitalPrinting', 'sra3Single', false);
+                                      updateComponentOption(component.id, 'digitalPrinting', 'largeFormatSingle', false);
+                                      updateComponentOption(component.id, 'digitalPrinting', 'largeFormatDouble', false);
+                                    }
+                                    updateComponentOption(component.id, 'digitalPrinting', 'sra3Double', e.target.checked);
+                                  }}
                                   className="rounded"
                                 />
-                                <span>Формат 70х32см</span>
+                                <span>SRA3 4+4 (5,000)</span>
+                              </label>
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={component.options.digitalPrinting.largeFormatSingle}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      updateComponentOption(component.id, 'digitalPrinting', 'sra3Single', false);
+                                      updateComponentOption(component.id, 'digitalPrinting', 'sra3Double', false);
+                                      updateComponentOption(component.id, 'digitalPrinting', 'largeFormatDouble', false);
+                                    }
+                                    updateComponentOption(component.id, 'digitalPrinting', 'largeFormatSingle', e.target.checked);
+                                  }}
+                                  className="rounded"
+                                />
+                                <span>70х32см 4+0 (4,000)</span>
+                              </label>
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={component.options.digitalPrinting.largeFormatDouble}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      updateComponentOption(component.id, 'digitalPrinting', 'sra3Single', false);
+                                      updateComponentOption(component.id, 'digitalPrinting', 'sra3Double', false);
+                                      updateComponentOption(component.id, 'digitalPrinting', 'largeFormatSingle', false);
+                                    }
+                                    updateComponentOption(component.id, 'digitalPrinting', 'largeFormatDouble', e.target.checked);
+                                  }}
+                                  className="rounded"
+                                />
+                                <span>70х32см 4+4 (7,000)</span>
                               </label>
                             </div>
                           )}
