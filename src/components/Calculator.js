@@ -32,8 +32,33 @@ const initialComponentData = {
     threeDFoil: { enabled: false },
     spotLacquer: { enabled: false },
     uvPrinting: { enabled: false, whiteColor: false },
-    plotter: { enabled: false }
+    plotter: { enabled: false },
+    foldGluing: { enabled: false },
+    manualGluing: { enabled: false, pricePerUnit: 0 }
   }
+};
+
+const operationNames = {
+  printing: 'Печать',
+  lamination: 'Ламинация',
+  uvCoating: 'УФ-лакировка',
+  embossing: 'Тиснение',
+  dieCutting: 'Вырубка',
+  congreve: 'Конгрев',
+  foil: 'Фольга',
+  binding: 'Брошюровка',
+  stapling: 'Скрепление скобой',
+  thermalBinding: 'Термоклей',
+  threadSewing: 'Ниткошвейка',
+  folding: 'Фальцовка',
+  mounting: 'Кашировка',
+  threeDLacquer: '3D лак',
+  threeDFoil: '3D фольга',
+  spotLacquer: 'Выборочный лак',
+  uvPrinting: 'UV печать',
+  plotter: 'Плоттерная резка',
+  foldGluing: 'Фальц-склейка',
+  manualGluing: 'Ручная склейка'
 };
 
 const Calculator = () => {
@@ -105,6 +130,10 @@ const Calculator = () => {
       plotter: {
         A3: 12000,
         A2: 12000
+      },
+      foldGluing: {
+        setup: 100000,
+        perUnit: 30
       }
     }
   };
@@ -229,6 +258,17 @@ const Calculator = () => {
     // Plotter (плоттер)
     if (component.options.plotter.enabled) {
       additionalCost += prices.operations.plotter[component.format] * totalSheets;
+    }
+
+    // Fold Gluing (фальц-склейка)
+    if (component.options.foldGluing.enabled) {
+      additionalCost += prices.operations.foldGluing.setup + 
+        (prices.operations.foldGluing.perUnit * component.quantity);
+    }
+
+    // Manual Gluing (ручная склейка)
+    if (component.options.manualGluing.enabled) {
+      additionalCost += component.options.manualGluing.pricePerUnit * component.quantity;
     }
 
     const totalCost = paperCost + printingCost + formsCost + additionalCost;
@@ -500,252 +540,171 @@ const Calculator = () => {
 
                 <div className="space-y-4">
                   <h3 className="font-medium">Операции:</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Печать с дополнительными опциями */}
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={component.options.printing.enabled}
-                          onChange={(e) => updateComponentOption(component.id, 'printing', 'enabled', e.target.checked)}
-                          className="rounded"
-                        />
-                        <span>Печать</span>
-                      </label>
-                      {component.options.printing.enabled && (
-                        <div className="pl-6 space-y-2">
+                  
+                  {/* Группы операций */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Основные операции */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-sm text-gray-600">Основные операции</h4>
+                      <div className="space-y-2">
+                        {/* Печать */}
+                        <div className="p-3 bg-white rounded-lg shadow-sm">
                           <label className="flex items-center space-x-2">
                             <input
                               type="checkbox"
-                              checked={component.options.printing.doubleSided}
-                              onChange={(e) => updateComponentOption(component.id, 'printing', 'doubleSided', e.target.checked)}
+                              checked={component.options.printing.enabled}
+                              onChange={(e) => updateComponentOption(component.id, 'printing', 'enabled', e.target.checked)}
                               className="rounded"
                             />
-                            <span>Двусторонняя</span>
+                            <span className="font-medium">{operationNames.printing}</span>
                           </label>
-                          <label className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              checked={component.options.printing.doubleForms}
-                              onChange={(e) => updateComponentOption(component.id, 'printing', 'doubleForms', e.target.checked)}
-                              className="rounded"
-                            />
-                            <span>Двойной комплект форм</span>
-                          </label>
+                          {component.options.printing.enabled && (
+                            <div className="pl-6 mt-2 space-y-2">
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={component.options.printing.doubleSided}
+                                  onChange={(e) => updateComponentOption(component.id, 'printing', 'doubleSided', e.target.checked)}
+                                  className="rounded"
+                                />
+                                <span>Двусторонняя</span>
+                              </label>
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={component.options.printing.doubleForms}
+                                  onChange={(e) => updateComponentOption(component.id, 'printing', 'doubleForms', e.target.checked)}
+                                  className="rounded"
+                                />
+                                <span>Двойной комплект форм</span>
+                              </label>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-
-                    {/* Остальные операции */}
-                    {['lamination', 'uvCoating', 'embossing', 'dieCutting', 'congreve', 'foil', 'thermalBinding', 'stapling', 'threadSewing', 'folding', 'mounting', 'threeDLacquer', 'threeDFoil', 'spotLacquer', 'uvPrinting', 'plotter'].map((key) => (
-                      <div key={key} className="space-y-2">
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={component.options[key].enabled}
-                            onChange={(e) => updateComponentOption(component.id, key, 'enabled', e.target.checked)}
-                            className="rounded"
-                          />
-                          <span>{key === 'foil' ? 'Фольга' : key === 'thermalBinding' ? 'Термоклей' : key.charAt(0).toUpperCase() + key.slice(1)}</span>
-                        </label>
                       </div>
-                    ))}
+                    </div>
 
-                    {/* Брошюровка (кольца) */}
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={component.options.binding.enabled}
-                          onChange={(e) => updateComponentOption(component.id, 'binding', 'enabled', e.target.checked)}
-                          className="rounded"
-                        />
-                        <span>Брошюровка</span>
-                      </label>
-                      {component.options.binding.enabled && (
-                        <div className="pl-6">
-                          <label className="block text-sm">Количество колец:</label>
-                          <input
-                            type="number"
-                            value={component.options.binding.ringsCount}
-                            onChange={(e) => updateComponentOption(component.id, 'binding', 'ringsCount', parseInt(e.target.value) || 1)}
-                            min="1"
-                            className="w-full p-2 border rounded"
-                          />
+                    {/* Отделочные операции */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-sm text-gray-600">Отделочные операции</h4>
+                      <div className="space-y-2">
+                        {['lamination', 'uvCoating', 'embossing', 'dieCutting', 'congreve', 'foil', 'threeDLacquer', 'threeDFoil', 'spotLacquer', 'uvPrinting'].map((key) => (
+                          <div key={key} className="p-3 bg-white rounded-lg shadow-sm">
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={component.options[key].enabled}
+                                onChange={(e) => updateComponentOption(component.id, key, 'enabled', e.target.checked)}
+                                className="rounded"
+                                disabled={['threeDLacquer', 'threeDFoil'].includes(key) && component.format === 'A1'}
+                              />
+                              <span className="font-medium">{operationNames[key]}</span>
+                              {['threeDLacquer', 'threeDFoil'].includes(key) && component.format === 'A1' && (
+                                <span className="text-red-500 text-sm">(недоступно для A1)</span>
+                              )}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Послепечатные операции */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-sm text-gray-600">Послепечатные операции</h4>
+                      <div className="space-y-2">
+                        {/* Фальц-склейка */}
+                        <div className="p-3 bg-white rounded-lg shadow-sm">
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={component.options.foldGluing.enabled}
+                              onChange={(e) => updateComponentOption(component.id, 'foldGluing', 'enabled', e.target.checked)}
+                              className="rounded"
+                            />
+                            <span className="font-medium">{operationNames.foldGluing}</span>
+                          </label>
                         </div>
-                      )}
-                    </div>
 
-                    {/* Скоба */}
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={component.options.stapling.enabled}
-                          onChange={(e) => updateComponentOption(component.id, 'stapling', 'enabled', e.target.checked)}
-                          className="rounded"
-                        />
-                        <span>Скоба</span>
-                      </label>
-                    </div>
-
-                    {/* Ниткошвейка */}
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={component.options.threadSewing.enabled}
-                          onChange={(e) => updateComponentOption(component.id, 'threadSewing', 'enabled', e.target.checked)}
-                          className="rounded"
-                        />
-                        <span>Ниткошвейка</span>
-                      </label>
-                      {component.options.threadSewing.enabled && (
-                        <div className="pl-6">
-                          <label className="block text-sm">Количество тетрадей:</label>
-                          <input
-                            type="number"
-                            value={component.options.threadSewing.signatures}
-                            onChange={(e) => updateComponentOption(component.id, 'threadSewing', 'signatures', parseInt(e.target.value) || 1)}
-                            min="1"
-                            className="w-full p-2 border rounded"
-                          />
+                        {/* Ручная склейка */}
+                        <div className="p-3 bg-white rounded-lg shadow-sm">
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={component.options.manualGluing.enabled}
+                              onChange={(e) => updateComponentOption(component.id, 'manualGluing', 'enabled', e.target.checked)}
+                              className="rounded"
+                            />
+                            <span className="font-medium">{operationNames.manualGluing}</span>
+                          </label>
+                          {component.options.manualGluing.enabled && (
+                            <div className="pl-6 mt-2">
+                              <label className="block text-sm">Цена за единицу:</label>
+                              <input
+                                type="number"
+                                value={component.options.manualGluing.pricePerUnit}
+                                onChange={(e) => updateComponentOption(component.id, 'manualGluing', 'pricePerUnit', parseFloat(e.target.value) || 0)}
+                                className="w-full p-2 border rounded"
+                              />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    {/* Фальцовка */}
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={component.options.folding.enabled}
-                          onChange={(e) => updateComponentOption(component.id, 'folding', 'enabled', e.target.checked)}
-                          className="rounded"
-                        />
-                        <span>Фальцовка</span>
-                      </label>
-                      {component.options.folding.enabled && (
-                        <div className="pl-6">
-                          <label className="block text-sm">Количество фальцев:</label>
-                          <input
-                            type="number"
-                            value={component.options.folding.folds}
-                            onChange={(e) => updateComponentOption(component.id, 'folding', 'folds', parseInt(e.target.value) || 1)}
-                            min="1"
-                            className="w-full p-2 border rounded"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Кашировка */}
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={component.options.mounting.enabled}
-                          onChange={(e) => updateComponentOption(component.id, 'mounting', 'enabled', e.target.checked)}
-                          className="rounded"
-                        />
-                        <span>Кашировка</span>
-                      </label>
-                    </div>
-
-                    {/* 3D лак */}
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={component.options.threeDLacquer.enabled}
-                          onChange={(e) => {
-                            if (e.target.checked && component.format === 'A1') {
-                              alert('3D лак недоступен для формата A1');
-                              return;
-                            }
-                            updateComponentOption(component.id, 'threeDLacquer', 'enabled', e.target.checked)
-                          }}
-                          className="rounded"
-                          disabled={component.format === 'A1'}
-                        />
-                        <span>3D лак</span>
-                        {component.format === 'A1' && (
-                          <span className="text-red-500 text-sm">(недоступно для A1)</span>
-                        )}
-                      </label>
-                    </div>
-
-                    {/* 3D фольга */}
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={component.options.threeDFoil.enabled}
-                          onChange={(e) => {
-                            if (e.target.checked && component.format === 'A1') {
-                              alert('3D фольга недоступна для формата A1');
-                              return;
-                            }
-                            updateComponentOption(component.id, 'threeDFoil', 'enabled', e.target.checked)
-                          }}
-                          className="rounded"
-                          disabled={component.format === 'A1'}
-                        />
-                        <span>3D фольга</span>
-                        {component.format === 'A1' && (
-                          <span className="text-red-500 text-sm">(недоступно для A1)</span>
-                        )}
-                      </label>
-                    </div>
-
-                    {/* Выборочный трафаретный лак */}
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={component.options.spotLacquer.enabled}
-                          onChange={(e) => updateComponentOption(component.id, 'spotLacquer', 'enabled', e.target.checked)}
-                          className="rounded"
-                        />
-                        <span>Выборочный лак</span>
-                      </label>
-                    </div>
-
-                    {/* UV печать */}
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={component.options.uvPrinting.enabled}
-                          onChange={(e) => updateComponentOption(component.id, 'uvPrinting', 'enabled', e.target.checked)}
-                          className="rounded"
-                        />
-                        <span>UV печать</span>
-                      </label>
-                      {component.options.uvPrinting.enabled && (
-                        <label className="flex items-center space-x-2 pl-6">
-                          <input
-                            type="checkbox"
-                            checked={component.options.uvPrinting.whiteColor}
-                            onChange={(e) => updateComponentOption(component.id, 'uvPrinting', 'whiteColor', e.target.checked)}
-                            className="rounded"
-                          />
-                          <span>С белым цветом</span>
-                        </label>
-                      )}
-                    </div>
-
-                    {/* Плоттер */}
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={component.options.plotter.enabled}
-                          onChange={(e) => updateComponentOption(component.id, 'plotter', 'enabled', e.target.checked)}
-                          className="rounded"
-                        />
-                        <span>Плоттер</span>
-                      </label>
+                        {/* Остальные послепечатные операции */}
+                        {['binding', 'stapling', 'thermalBinding', 'threadSewing', 'folding', 'mounting', 'plotter'].map((key) => (
+                          <div key={key} className="p-3 bg-white rounded-lg shadow-sm">
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={component.options[key].enabled}
+                                onChange={(e) => updateComponentOption(component.id, key, 'enabled', e.target.checked)}
+                                className="rounded"
+                              />
+                              <span className="font-medium">{operationNames[key]}</span>
+                            </label>
+                            {/* Дополнительные поля для операций */}
+                            {component.options[key].enabled && (
+                              <div className="pl-6 mt-2">
+                                {key === 'binding' && (
+                                  <>
+                                    <label className="block text-sm">Количество колец:</label>
+                                    <input
+                                      type="number"
+                                      value={component.options.binding.ringsCount}
+                                      onChange={(e) => updateComponentOption(component.id, 'binding', 'ringsCount', parseInt(e.target.value) || 1)}
+                                      min="1"
+                                      className="w-full p-2 border rounded"
+                                    />
+                                  </>
+                                )}
+                                {key === 'threadSewing' && (
+                                  <>
+                                    <label className="block text-sm">Количество тетрадей:</label>
+                                    <input
+                                      type="number"
+                                      value={component.options.threadSewing.signatures}
+                                      onChange={(e) => updateComponentOption(component.id, 'threadSewing', 'signatures', parseInt(e.target.value) || 1)}
+                                      min="1"
+                                      className="w-full p-2 border rounded"
+                                    />
+                                  </>
+                                )}
+                                {key === 'folding' && (
+                                  <>
+                                    <label className="block text-sm">Количество фальцев:</label>
+                                    <input
+                                      type="number"
+                                      value={component.options.folding.folds}
+                                      onChange={(e) => updateComponentOption(component.id, 'folding', 'folds', parseInt(e.target.value) || 1)}
+                                      min="1"
+                                      className="w-full p-2 border rounded"
+                                    />
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
