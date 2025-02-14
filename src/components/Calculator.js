@@ -167,7 +167,9 @@ const Calculator = () => {
       formsCost = format.forms * printMultiplier * component.printedSheets * formsMultiplier;
     } else if (component.options.digitalPrinting.enabled) {
       const digitalPrices = prices.digitalPrinting[component.options.digitalPrinting.largeFormat ? 'large' : 'SRA3'];
-      printingCost = component.options.digitalPrinting.doubleSided ? digitalPrices.double : digitalPrices.single;
+      const pricePerSheet = component.options.digitalPrinting.doubleSided ? digitalPrices.double : digitalPrices.single;
+      const totalDigitalSheets = Math.ceil(component.quantity * sheetsPerProduct);
+      printingCost = pricePerSheet * totalDigitalSheets;
       formsCost = 0; // При цифровой печати формы не нужны
     }
 
@@ -814,7 +816,16 @@ const Calculator = () => {
                       </span>
                     </span>
                     
-                    <span>Стоимость печати{component.options.printing.doubleSided ? ' (двусторонняя)' : ''}:</span>
+                    <span>Стоимость печати
+                      {component.options.printing.enabled ? 
+                        (component.options.printing.doubleSided ? ' (офсетная двусторонняя)' : ' (офсетная односторонняя)') :
+                        component.options.digitalPrinting.enabled ? 
+                          (component.options.digitalPrinting.doubleSided ? 
+                            (component.options.digitalPrinting.largeFormat ? ' (цифровая 70х32см 4+4)' : ' (цифровая SRA3 4+4)') :
+                            (component.options.digitalPrinting.largeFormat ? ' (цифровая 70х32см 4+0)' : ' (цифровая SRA3 4+0)')
+                          ) : ''
+                      }:
+                    </span>
                     <span className="text-right">
                       {results.costs.printing.toFixed(2)}
                       <br />
