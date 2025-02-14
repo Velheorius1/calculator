@@ -168,8 +168,8 @@ const Calculator = () => {
     } else if (component.options.digitalPrinting.enabled) {
       const digitalPrices = prices.digitalPrinting[component.options.digitalPrinting.largeFormat ? 'large' : 'SRA3'];
       const pricePerSheet = component.options.digitalPrinting.doubleSided ? digitalPrices.double : digitalPrices.single;
-      const totalDigitalSheets = Math.ceil(component.quantity * sheetsPerProduct);
-      printingCost = pricePerSheet * totalDigitalSheets;
+      // Для цифровой печати считаем стоимость за каждый лист
+      printingCost = pricePerSheet * Math.ceil(component.quantity / component.sharesPerSheet);
       formsCost = 0; // При цифровой печати формы не нужны
     }
 
