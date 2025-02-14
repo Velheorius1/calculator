@@ -16,6 +16,7 @@ const initialComponentData = {
   printedSheets: 1,
   options: {
     printing: { enabled: true, doubleSided: false, doubleForms: false },
+    digitalPrinting: { enabled: false, doubleSided: false, largeFormat: false },
     lamination: { enabled: false, doubleSided: false },
     uvCoating: { enabled: false, doubleSided: false },
     embossing: { enabled: false, doubleSided: false },
@@ -30,7 +31,7 @@ const initialComponentData = {
     mounting: { enabled: false },
     threeDLacquer: { enabled: false },
     threeDFoil: { enabled: false },
-    spotLacquer: { enabled: false },
+    spotLacquer: { enabled: false, base: 0, perUnit: 0, threshold: 0 },
     uvPrinting: { enabled: false, whiteColor: false },
     plotter: { enabled: false },
     foldGluing: { enabled: false },
@@ -40,6 +41,7 @@ const initialComponentData = {
 
 const operationNames = {
   printing: 'Печать',
+  digitalPrinting: 'Цифровая печать',
   lamination: 'Ламинация',
   uvCoating: 'УФ-лакировка',
   embossing: 'Тиснение',
@@ -74,6 +76,10 @@ const Calculator = () => {
       A1: { printSetup: 900000, printPerUnit: 220, forms: 280000 },
       A2: { printSetup: 400000, printPerUnit: 120, forms: 160000 },
       A3: { printSetup: 200000, printPerUnit: 80, forms: 100000 }
+    },
+    digitalPrinting: {
+      SRA3: { single: 2500, double: 5000 },
+      large: { single: 4000, double: 7000 }
     },
     operations: {
       dieCutting: {
@@ -148,29 +154,54 @@ const Calculator = () => {
       ? paperWeight * component.paperPrice 
       : totalSheets * component.paperPrice;
 
-    const format = prices.formats[component.format];
-    const printMultiplier = component.options.printing.doubleSided ? 2 : 1;
-    
-    const printingCost = component.printedSheets * (format.printSetup + 
-      (component.quantity > 1000 ? (component.quantity - 1000) * format.printPerUnit : 0)) * printMultiplier;
-    
-    const formsMultiplier = component.options.printing.doubleForms ? 2 : 1;
-    const formsCost = format.forms * printMultiplier * component.printedSheets * formsMultiplier;
+    let printingCost = 0;
+    let formsCost = 0;
+
+    if (component.options.printing.enabled && !component.options.digitalPrinting.enabled) {
+      const format = prices.formats[component.format];
+      const printMultiplier = component.options.printing.doubleSided ? 2 : 1;
+      printingCost = (format.printSetup + 
+        (component.quantity > 1000 ? (component.quantity - 1000) * format.printPerUnit : 0)) * printMultiplier;
+      
+      const formsMultiplier = component.options.printing.doubleForms ? 2 : 1;
+      formsCost = format.forms * printMultiplier * component.printedSheets * formsMultiplier;
+    } else if (component.options.digitalPrinting.enabled) {
+      const digitalPrices = prices.digitalPrinting[component.options.digitalPrinting.largeFormat ? 'large' : 'SRA3'];
+      printingCost = component.options.digitalPrinting.doubleSided ? digitalPrices.double : digitalPrices.single;
+      formsCost = 0; // При цифровой печати формы не нужны
+    }
 
     let additionalCost = 0;
 
+    // Lamination (ламинация)
     if (component.options.lamination.enabled) {
-      additionalCost += totalArea * 1500 * (component.options.lamination.doubleSided ? 2 : 1);
+      const laminationCost = totalArea * 1500;
+      additionalCost += laminationCost * (component.options.lamination.doubleSided ? 2 : 1);
+    }
+
+    // Die Cutting (вырубка)
+    if (component.options.dieCutting.enabled) {
+      const dieCutting = prices.operations.dieCutting[component.format];
+      const baseCost = dieCutting.base || 0;
+      const perUnitCost = totalSheets * dieCutting.perUnit;
+      additionalCost += (baseCost + perUnitCost) * (component.options.dieCutting.doubleSided ? 2 : 1);
+    }
+
+    // Spot Lacquer (выборочный лак)
+    if (component.options.spotLacquer.enabled) {
+      const spotLacquer = prices.operations.spotLacquer[component.format];
+      const baseCost = spotLacquer.base;
+      const extraSheets = Math.max(0, totalSheets - spotLacquer.threshold);
+      const extraCost = extraSheets * spotLacquer.perUnit;
+      additionalCost += baseCost + extraCost;
     }
 
     if (component.options.uvCoating.enabled) {
       additionalCost += totalArea * 1100 * (component.options.uvCoating.doubleSided ? 2 : 1);
     }
 
-    if (component.options.dieCutting.enabled) {
-      const dieCutting = prices.operations.dieCutting[component.format];
-      const cost = (dieCutting.base || 0) + (totalSheets * dieCutting.perUnit);
-      additionalCost += cost * (component.options.dieCutting.doubleSided ? 2 : 1);
+    if (component.options.embossing.enabled) {
+      additionalCost += totalArea * 1500 * (component.options.embossing.doubleSided ? 2 : 1);
     }
 
     if (component.options.congreve.enabled) {
@@ -238,15 +269,6 @@ const Calculator = () => {
       }
     }
 
-    // Spot Lacquer (выборочный трафаретный лак)
-    if (component.options.spotLacquer.enabled) {
-      const spotLacquer = prices.operations.spotLacquer[component.format];
-      additionalCost += spotLacquer.base;
-      if (totalSheets > spotLacquer.threshold) {
-        additionalCost += (totalSheets - spotLacquer.threshold) * spotLacquer.perUnit;
-      }
-    }
-
     // UV Printing (UV печать)
     if (component.options.uvPrinting.enabled) {
       const pricePerM2 = component.options.uvPrinting.whiteColor 
@@ -272,10 +294,16 @@ const Calculator = () => {
     }
 
     const totalCost = paperCost + printingCost + formsCost + additionalCost;
-    const vatDeduction = totalCost * 0.115;
-    const profitMultiplier = 1 / (1 - (component.profitMargin / 100));
-    const priceWithoutVAT = totalCost * profitMultiplier;
-    const priceWithVAT = (priceWithoutVAT * 1.12) - vatDeduction;
+    
+    // Определяем сумму операций, не подлежащих вычету НДС
+    const noVatDeductionCost = (component.options.manualGluing.enabled ? component.options.manualGluing.pricePerUnit * component.quantity : 0) +
+      (component.options.spotLacquer.enabled ? (baseCost + extraCost) : 0) +
+      (component.options.mounting.enabled ? prices.operations.mounting[component.format] * totalSheets : 0);
+    
+    // Вычет НДС только для операций, подлежащих вычету
+    const vatDeduction = (totalCost - noVatDeductionCost) * 0.115;
+    const priceWithoutVAT = totalCost * (1 + (component.profitMargin / 100));
+    const priceWithVAT = priceWithoutVAT * 1.12 - vatDeduction;
 
     return {
       sheets: totalSheets,
@@ -456,7 +484,7 @@ const Calculator = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-2 gap-4">
                   <div className="space-y-2">
                     <label className="block text-sm font-medium">Листы на приладку</label>
                     <input
@@ -553,7 +581,13 @@ const Calculator = () => {
                             <input
                               type="checkbox"
                               checked={component.options.printing.enabled}
-                              onChange={(e) => updateComponentOption(component.id, 'printing', 'enabled', e.target.checked)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  // Отключаем цифровую печать при включении обычной
+                                  updateComponentOption(component.id, 'digitalPrinting', 'enabled', false);
+                                }
+                                updateComponentOption(component.id, 'printing', 'enabled', e.target.checked);
+                              }}
                               className="rounded"
                             />
                             <span className="font-medium">{operationNames.printing}</span>
@@ -577,6 +611,47 @@ const Calculator = () => {
                                   className="rounded"
                                 />
                                 <span>Двойной комплект форм</span>
+                              </label>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Цифровая печать */}
+                        <div className="p-3 bg-white rounded-lg shadow-sm">
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={component.options.digitalPrinting.enabled}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  // Отключаем обычную печать при включении цифровой
+                                  updateComponentOption(component.id, 'printing', 'enabled', false);
+                                }
+                                updateComponentOption(component.id, 'digitalPrinting', 'enabled', e.target.checked);
+                              }}
+                              className="rounded"
+                            />
+                            <span className="font-medium">{operationNames.digitalPrinting}</span>
+                          </label>
+                          {component.options.digitalPrinting.enabled && (
+                            <div className="pl-6 mt-2 space-y-2">
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={component.options.digitalPrinting.doubleSided}
+                                  onChange={(e) => updateComponentOption(component.id, 'digitalPrinting', 'doubleSided', e.target.checked)}
+                                  className="rounded"
+                                />
+                                <span>Двусторонняя (4+4)</span>
+                              </label>
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={component.options.digitalPrinting.largeFormat}
+                                  onChange={(e) => updateComponentOption(component.id, 'digitalPrinting', 'largeFormat', e.target.checked)}
+                                  className="rounded"
+                                />
+                                <span>Формат 70х32см</span>
                               </label>
                             </div>
                           )}
