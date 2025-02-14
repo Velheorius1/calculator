@@ -16,7 +16,13 @@ const initialComponentData = {
   printedSheets: 1,
   options: {
     printing: { enabled: true, doubleSided: false, doubleForms: false },
-    digitalPrinting: { enabled: false, doubleSided: false, largeFormat: false },
+    digitalPrinting: { 
+      enabled: false, 
+      sra3Single: false,
+      sra3Double: false,
+      largeFormatSingle: false,
+      largeFormatDouble: false 
+    },
     lamination: { enabled: false, doubleSided: false },
     uvCoating: { enabled: false, doubleSided: false },
     embossing: { enabled: false, doubleSided: false },
@@ -166,11 +172,18 @@ const Calculator = () => {
       const formsMultiplier = component.options.printing.doubleForms ? 2 : 1;
       formsCost = format.forms * printMultiplier * component.printedSheets * formsMultiplier;
     } else if (component.options.digitalPrinting.enabled) {
-      const digitalPrices = prices.digitalPrinting[component.options.digitalPrinting.largeFormat ? 'large' : 'SRA3'];
-      const pricePerSheet = component.options.digitalPrinting.doubleSided ? digitalPrices.double : digitalPrices.single;
-      // Для цифровой печати считаем стоимость за каждый лист
+      let pricePerSheet = 0;
+      if (component.options.digitalPrinting.sra3Single) {
+        pricePerSheet = 2500;
+      } else if (component.options.digitalPrinting.sra3Double) {
+        pricePerSheet = 5000;
+      } else if (component.options.digitalPrinting.largeFormatSingle) {
+        pricePerSheet = 4000;
+      } else if (component.options.digitalPrinting.largeFormatDouble) {
+        pricePerSheet = 7000;
+      }
       printingCost = pricePerSheet * Math.ceil(component.quantity / component.sharesPerSheet);
-      formsCost = 0; // При цифровой печати формы не нужны
+      formsCost = 0;
     }
 
     let additionalCost = 0;
@@ -626,10 +639,13 @@ const Calculator = () => {
                               checked={component.options.digitalPrinting.enabled}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  // Отключаем обычную печать при включении цифровой
                                   updateComponentOption(component.id, 'printing', 'enabled', false);
                                 }
                                 updateComponentOption(component.id, 'digitalPrinting', 'enabled', e.target.checked);
+                                // Сбрасываем все опции при отключении
+                                if (!e.target.checked) {
+                                  updateComponentOption(component.id, 'digitalPrinting', 'sra3Single', false);
+                                  updateComponentOption(component.id, 'digitalPrinting', 'sra3Double', false);
                               }}
                               className="rounded"
                             />
