@@ -994,6 +994,81 @@ const Calculator = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Таблица с расчетами для разных тиражей */}
+      <Card className="w-full max-w-4xl mx-auto mt-6">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold">Коммерческое предложение</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="font-medium">Параметры расчета:</div>
+            <div className="text-sm space-y-1">
+              {components.map((component, index) => (
+                <div key={component.id}>
+                  <div>Компонент {index + 1}: {component.name}</div>
+                  <div className="pl-4">
+                    <div>- Формат: {component.format}</div>
+                    <div>- Бумага: {component.paperWeight} г/м²</div>
+                    {component.options.printing.enabled && (
+                      <div>- Печать: {component.options.printing.doubleSided ? '4+4' : '4+0'}</div>
+                    )}
+                    {component.options.digitalPrinting.enabled && (
+                      <div>- Цифровая печать: {
+                        component.options.digitalPrinting.sra3Single ? 'SRA3 4+0' :
+                        component.options.digitalPrinting.sra3Double ? 'SRA3 4+4' :
+                        component.options.digitalPrinting.largeFormatSingle ? '70х32см 4+0' :
+                        '70х32см 4+4'
+                      }</div>
+                    )}
+                    {Object.entries(component.options).map(([key, value]) => {
+                      if (key !== 'printing' && key !== 'digitalPrinting' && value.enabled) {
+                        return (
+                          <div key={key}>- {operationNames[key]}</div>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <table className="w-full border-collapse mt-4">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border p-2 text-left">Тираж</th>
+                  <th className="border p-2 text-right">Цена за единицу</th>
+                  <th className="border p-2 text-right">Общая стоимость</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3, 5].map(multiplier => {
+                  const quantity = components.reduce((sum, comp) => sum + comp.quantity, 0) * multiplier;
+                  const totalPrice = totalResults.totalPriceWithVAT * multiplier;
+                  const pricePerUnit = totalPrice / quantity;
+
+                  return (
+                    <tr key={multiplier}>
+                      <td className="border p-2">{quantity.toLocaleString()} шт</td>
+                      <td className="border p-2 text-right">{pricePerUnit.toFixed(2)} тг</td>
+                      <td className="border p-2 text-right">{totalPrice.toFixed(2)} тг</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div className="text-sm text-gray-500 mt-2">
+              * Цены указаны с учетом НДС 12%
+              <br />
+              * Срок изготовления: 3-5 рабочих дней
+              <br />
+              * Предложение действительно в течение 5 рабочих дней
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
