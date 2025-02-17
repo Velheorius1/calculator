@@ -1044,15 +1044,32 @@ const Calculator = () => {
               </thead>
               <tbody>
                 {[1, 2, 3, 5].map(multiplier => {
+                  // Создаем копию компонентов с измененным тиражом
+                  const modifiedComponents = components.map(comp => ({
+                    ...comp,
+                    quantity: comp.quantity * multiplier
+                  }));
+
+                  // Рассчитываем общую стоимость для модифицированного тиража
+                  let totalCost = 0;
+                  let totalPriceWithoutVAT = 0;
+                  let totalPriceWithVAT = 0;
+
+                  modifiedComponents.forEach(component => {
+                    const results = calculateComponentCost(component);
+                    totalCost += results.costs.total;
+                    totalPriceWithoutVAT += results.prices.withoutVAT;
+                    totalPriceWithVAT += results.prices.withVAT;
+                  });
+
                   const quantity = components.reduce((sum, comp) => sum + comp.quantity, 0) * multiplier;
-                  const totalPrice = totalResults.totalPriceWithVAT * multiplier;
-                  const pricePerUnit = totalPrice / quantity;
+                  const pricePerUnit = totalPriceWithVAT / quantity;
 
                   return (
                     <tr key={multiplier}>
                       <td className="border p-2">{quantity.toLocaleString()} шт</td>
                       <td className="border p-2 text-right">{pricePerUnit.toFixed(2)} тг</td>
-                      <td className="border p-2 text-right">{totalPrice.toFixed(2)} тг</td>
+                      <td className="border p-2 text-right">{totalPriceWithVAT.toFixed(2)} тг</td>
                     </tr>
                   );
                 })}
